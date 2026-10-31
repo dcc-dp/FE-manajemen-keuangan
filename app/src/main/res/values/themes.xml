@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Theme utama Android -->
+    <style
+        name="Theme.Umkmfinance"
+        parent="android:Theme.Material.Light.NoActionBar">
+
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">#F8F8FC</item>
+        <item name="android:navigationBarColor">#F8F8FC</item>
+
+    </style>
+
+
+    <!-- Theme yang digunakan saat Splash Screen -->
+    <style
+        name="Theme.Umkmfinance.Starting"
+        parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">#F8F8FC</item>
+
+        <item name="windowSplashScreenAnimatedIcon">
+            @drawable/img_2
+        </item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.Umkmfinance
+        </item>
+
+    </style>
+
+</resources>
