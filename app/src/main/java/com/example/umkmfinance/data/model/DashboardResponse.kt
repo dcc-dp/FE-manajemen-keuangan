@@ -30,7 +30,6 @@ data class DashboardBulanBerjalan(
     val total_pengeluaran: Double,
     val laba_bersih: Double
 )
-
 data class StokRendah(
     val id: Long,
     val nama: String,

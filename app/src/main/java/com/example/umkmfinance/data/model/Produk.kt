@@ -1,27 +1,27 @@
 package com.example.umkmfinance.data.model
 
 data class ProdukResponse(
-    val success: Boolean,
-    val message: String,
-    val data: List<Produk>?
+    val success: Boolean = false,
+    val message: String = "",
+    val data: List<Produk>? = null
 )
 
 data class ProdukDetailResponse(
-    val success: Boolean,
-    val message: String,
-    val data: Produk?
+    val success: Boolean = false,
+    val message: String = "",
+    val data: Produk? = null
 )
 
 data class Produk(
-    val id: Long,
-    val usaha_id: Long,
-    val kategori_id: Long,
-    val kode_produk: String,
-    val barcode: String?,
-    val nama: String,
-    val harga_modal: Double,
-    val harga_jual: Double,
-    val stok: Int,
-    val satuan: String,
-    val status: String
+    val id: Long = 0,
+    val usaha_id: Long = 0,
+    val kategori_id: Long = 0,
+    val kode_produk: String = "",
+    val barcode: String? = null,
+    val nama: String = "",
+    val harga_modal: Double = 0.0,
+    val harga_jual: Double = 0.0,
+    val stok: Int = 0,
+    val satuan: String = "Pcs",
+    val status: String = "ACTIVE"
 )
