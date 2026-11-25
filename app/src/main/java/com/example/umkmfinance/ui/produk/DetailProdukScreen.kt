@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -147,12 +146,12 @@ private fun DetailProdukView(
     onDeleteClick: () -> Unit = {},
     onAdjustStock: (jumlahPerubahan: Int, catatan: String) -> Unit = { _, _ -> }
 ) {
-    var stokSekarang by remember { mutableIntStateOf(stokAwal) }
+    var stokSekarang by remember(stokAwal) { mutableIntStateOf(stokAwal) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAdjustStockDialog by remember { mutableStateOf(false) }
     var isTambahStokMode by remember { mutableStateOf(true) }
 
-    // Hitung margin laba
+    val isAktif = status.equals("ACTIVE", true) || status.equals("AKTIF", true)
     val labaSatuan = (hargaJual - hargaModal).coerceAtLeast(0.0)
     val persentaseMargin = if (hargaJual > 0) (labaSatuan / hargaJual) * 100 else 0.0
 
@@ -203,141 +202,119 @@ private fun DetailProdukView(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Spacer(modifier = Modifier.height(4.dp))
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
             ) {
-                Column {
-                    // WADAH GAMBAR / AVATAR PRODUK
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = "Foto Produk",
-                                modifier = Modifier.size(56.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Foto Produk",
-                                style = MaterialTheme.typography.bodySmall,
+                                text = nama,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Kode: $kodeProduk",
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        Text(
+                            text = status.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAktif) Color(0xFF1B5E20) else Color(0xFF616161),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isAktif) Color(0xFFE8F5E9) else Color(0xFFEEEEEE)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    DetailItem(label = "Barcode", value = barcode ?: "-")
+                    DetailItem(label = "Kategori ID", value = kategoriId)
+                    DetailItem(label = "Satuan", value = satuan)
+                    DetailItem(
+                        label = "Status",
+                        value = status.uppercase(),
+                        isHighlight = isAktif
+                    )
+                    DetailItem(label = "Harga Modal", value = formatRupiah(hargaModal))
+                    DetailItem(label = "Harga Jual", value = formatRupiah(hargaJual), isHighlight = true)
+                    DetailItem(
+                        label = "Margin / Laba",
+                        value = "${formatRupiah(labaSatuan)} (${String.format(Locale.US, "%.1f", persentaseMargin)}%)",
+                        isHighlight = true
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Total Stok Tersedia",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = "$stokSekarang $satuan",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (stokSekarang <= 5) Color(0xFFC62828) else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
 
-                    // KONTEN INFORMASI PRODUK
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
+                        OutlinedButton(
+                            onClick = {
+                                isTambahStokMode = false
+                                showAdjustStockDialog = true
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828))
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = nama,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Kode: $kodeProduk",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                            }
-                            Text(
-                                text = status.uppercase(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = if (status.equals("ACTIVE", true) || status.equals("AKTIF", true)) Color(0xFF1B5E20) else Color(0xFF616161),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (status.equals("ACTIVE", true) || status.equals("AKTIF", true)) Color(0xFFE8F5E9) else Color(0xFFEEEEEE)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                            Icon(imageVector = Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Text("Kurangi Stok")
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        DetailItem(label = "Barcode", value = barcode ?: "-")
-                        DetailItem(label = "Kategori ID", value = kategoriId)
-                        DetailItem(label = "Harga Modal", value = formatRupiah(hargaModal))
-                        DetailItem(label = "Harga Jual", value = formatRupiah(hargaJual), isHighlight = true)
-                        DetailItem(
-                            label = "Margin / Laba",
-                            value = "${formatRupiah(labaSatuan)} (${String.format(Locale.US, "%.1f", persentaseMargin)}%)",
-                            isHighlight = true
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // SECTION STOK & QUICK ADJUSTMENT
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Button(
+                            onClick = {
+                                isTambahStokMode = true
+                                showAdjustStockDialog = true
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
                         ) {
-                            Column {
-                                Text(
-                                    text = "Total Stok Tersedia",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                                Text(
-                                    text = "$stokSekarang $satuan",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (stokSekarang <= 5) Color(0xFFC62828) else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-
-                        // TOMBOL AKSI CEPAT STOK (+ / -)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    isTambahStokMode = false
-                                    showAdjustStockDialog = true
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828))
-                            ) {
-                                Icon(imageVector = Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.size(4.dp))
-                                Text("Kurangi Stok")
-                            }
-
-                            Button(
-                                onClick = {
-                                    isTambahStokMode = true
-                                    showAdjustStockDialog = true
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.size(4.dp))
-                                Text("Tambah Stok")
-                            }
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Text("Tambah Stok")
                         }
                     }
                 }
@@ -347,9 +324,6 @@ private fun DetailProdukView(
         }
     }
 
-    // ==========================================
-    // DIALOG KONFIRMASI HAPUS PRODUK
-    // ==========================================
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -385,9 +359,6 @@ private fun DetailProdukView(
         )
     }
 
-    // ==========================================
-    // DIALOG QUICK STOCK ADJUSTMENT
-    // ==========================================
     if (showAdjustStockDialog) {
         var jumlahText by remember { mutableStateOf("") }
         var catatan by remember { mutableStateOf("") }
@@ -486,12 +457,8 @@ private fun formatRupiah(value: Double): String {
     return formatter.format(value)
 }
 
-// =============================================================
-// PREVIEW ANDROID STUDIO
-// =============================================================
-
 @Preview(
-    name = "Detail Produk - Tampilan Baru Lengkap",
+    name = "Detail Produk - Satuan & Status",
     showBackground = true,
     showSystemUi = true
 )

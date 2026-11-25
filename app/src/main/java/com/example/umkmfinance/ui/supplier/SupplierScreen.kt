@@ -22,9 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -101,7 +103,9 @@ fun SupplierContent(
         supplierList.filter { supplier ->
             supplier.nama.contains(searchQuery, ignoreCase = true) ||
                     (supplier.nama_kontak?.contains(searchQuery, ignoreCase = true) == true) ||
-                    (supplier.telepon?.contains(searchQuery, ignoreCase = true) == true)
+                    (supplier.telepon?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (supplier.email?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (supplier.alamat?.contains(searchQuery, ignoreCase = true) == true)
         }
     }
 
@@ -145,7 +149,7 @@ fun SupplierContent(
                         item {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Buku Supplier & Pemasok",
+                                text = "Supplier & Pemasok",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -209,7 +213,7 @@ fun SupplierContent(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Cari nama toko, sales, atau telepon...") },
+                                placeholder = { Text("Cari nama, kontak, telepon, email, atau alamat...") },
                                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
@@ -240,7 +244,7 @@ fun SupplierContent(
                                 }
                             }
                         } else {
-                            items(filteredList) { supplier ->
+                            items(filteredList, key = { it.id }) { supplier ->
                                 val hutang = hitungHutangSupplier(supplier)
                                 SupplierCard(
                                     supplier = supplier,
@@ -270,6 +274,11 @@ private fun SupplierCard(
     onCallClick: () -> Unit,
     onWhatsAppClick: () -> Unit
 ) {
+    val teleponTampil = supplier.telepon?.takeIf { it.isNotBlank() } ?: "-"
+    val emailTampil = supplier.email?.takeIf { it.isNotBlank() } ?: "-"
+    val alamatTampil = supplier.alamat?.takeIf { it.isNotBlank() } ?: "-"
+    val kontakTampil = supplier.nama_kontak?.takeIf { it.isNotBlank() } ?: "-"
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -278,34 +287,19 @@ private fun SupplierCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = supplier.nama,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (!supplier.nama_kontak.isNullOrBlank()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.size(4.dp))
-                            Text(
-                                text = supplier.nama_kontak!!,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = supplier.nama,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
 
                 if (hutang > 0) {
                     SuggestionChip(
@@ -325,26 +319,26 @@ private fun SupplierCard(
                 }
             }
 
-            if (!supplier.telepon.isNullOrBlank()) {
-                Text(
-                    text = "Telepon / WA: ${supplier.telepon}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-
-            if (!supplier.alamat.isNullOrBlank()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.outline)
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(
-                        text = supplier.alamat!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        maxLines = 1
-                    )
-                }
-            }
+            SupplierInfoRow(
+                icon = Icons.Default.Phone,
+                label = "Telepon",
+                value = teleponTampil
+            )
+            SupplierInfoRow(
+                icon = Icons.Default.Email,
+                label = "Email",
+                value = emailTampil
+            )
+            SupplierInfoRow(
+                icon = Icons.Default.LocationOn,
+                label = "Alamat",
+                value = alamatTampil
+            )
+            SupplierInfoRow(
+                icon = Icons.Default.Person,
+                label = "Kontak Person",
+                value = kontakTampil
+            )
 
             Row(
                 modifier = Modifier
@@ -372,6 +366,30 @@ private fun SupplierCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SupplierInfoRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+        Text(
+            text = "$label: $value",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -413,8 +431,8 @@ private fun formatRupiah(value: Double): String {
 @Composable
 private fun SupplierScreenPreview() {
     val dummy = listOf(
-        Supplier(1L, 1L, "Agen Kopi Nusantara", "081234567891", null, "Makassar", "Pak Rian"),
-        Supplier(2L, 1L, "Distributor Sirup Berkah", "085299887766", null, "Parangloe", "Ibu Maya")
+        Supplier(1L, 1L, "Agen Kopi Nusantara", "081234567891", "kopi.nusantara@example.com", "Jl. Sulawesi No. 12, Makassar", "Pak Rian"),
+        Supplier(2L, 1L, "Distributor Sirup Berkah", "085299887766", "sirup.berkah@example.com", "Parangloe", "Ibu Maya")
     )
     MaterialTheme {
         SupplierContent(

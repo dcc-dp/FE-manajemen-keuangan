@@ -1,5 +1,6 @@
 package com.example.umkmfinance.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -29,7 +30,11 @@ import com.example.umkmfinance.ui.hutang.DetailHutangScreen
 import com.example.umkmfinance.ui.hutang.HutangScreen
 import com.example.umkmfinance.ui.hutang.HutangViewModel
 import com.example.umkmfinance.ui.hutang.HutangViewModelFactory
+import com.example.umkmfinance.ui.kategori.KategoriProdukScreen
+import com.example.umkmfinance.ui.kategori.KategoriProdukViewModel
+import com.example.umkmfinance.ui.kategori.KategoriProdukViewModelFactory
 import com.example.umkmfinance.ui.pelanggan.DetailPelangganScreen
+import com.example.umkmfinance.ui.pelanggan.EditPelangganScreen
 import com.example.umkmfinance.ui.pelanggan.PelangganScreen
 import com.example.umkmfinance.ui.pelanggan.PelangganViewModel
 import com.example.umkmfinance.ui.pelanggan.PelangganViewModelFactory
@@ -51,6 +56,7 @@ import com.example.umkmfinance.ui.piutang.PiutangScreen
 import com.example.umkmfinance.ui.piutang.PiutangViewModel
 import com.example.umkmfinance.ui.piutang.PiutangViewModelFactory
 import com.example.umkmfinance.ui.produk.DetailProdukScreen
+import com.example.umkmfinance.ui.produk.EditProdukScreen
 import com.example.umkmfinance.ui.produk.ProdukScreen
 import com.example.umkmfinance.ui.produk.ProdukViewModel
 import com.example.umkmfinance.ui.produk.ProdukViewModelFactory
@@ -63,6 +69,7 @@ import com.example.umkmfinance.ui.supplier.DetailSupplierScreen
 import com.example.umkmfinance.ui.supplier.SupplierScreen
 import com.example.umkmfinance.ui.supplier.SupplierViewModel
 import com.example.umkmfinance.ui.supplier.SupplierViewModelFactory
+import com.example.umkmfinance.ui.supplier.TambahSupplierScreen
 
 @Composable
 fun MainScreen(
@@ -122,7 +129,7 @@ fun MainScreen(
                 Text(text = "Halaman Laporan")
             }
 
-            // MENU UTAMA
+            // MENU UTAMA (Produk diakses via Kategori Produk)
             composable("menu") {
                 MenuScreen(
                     role = role,
@@ -130,7 +137,7 @@ fun MainScreen(
                         when (menuKey) {
                             "Penjualan" -> navController.navigate("transaksi")
                             "Pembelian" -> navController.navigate("pembelian")
-                            "Produk" -> navController.navigate("produk")
+                            "Kategori Produk" -> navController.navigate("kategori_produk")
                             "Pelanggan" -> navController.navigate("pelanggan")
                             "Supplier" -> navController.navigate("supplier")
                             "Pengeluaran" -> navController.navigate("pengeluaran")
@@ -143,9 +150,36 @@ fun MainScreen(
             }
 
             // ==========================================
-            // MODUL PRODUK
+            // MODUL KATEGORI PRODUK -> MASUK KE PRODUK
             // ==========================================
-            composable("produk") {
+            composable("kategori_produk") {
+                val context = LocalContext.current
+                val kategoriViewModel: KategoriProdukViewModel = viewModel(
+                    factory = KategoriProdukViewModelFactory(context)
+                )
+
+                KategoriProdukScreen(
+                    viewModel = kategoriViewModel,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onKategoriClick = { kategori ->
+                        val encodedNama = Uri.encode(kategori.nama)
+                        navController.navigate("produk?kategoriId=${kategori.id}&kategoriNama=$encodedNama")
+                    },
+                    onSemuaProdukClick = {
+                        val encodedNama = Uri.encode("Semua Produk")
+                        navController.navigate("produk?kategoriId=0&kategoriNama=$encodedNama")
+                    }
+                )
+            }
+
+            // ==========================================
+            // MODUL PRODUK (DIAKSES DARI KATEGORI)
+            // ==========================================
+            composable("produk?kategoriId={kategoriId}&kategoriNama={kategoriNama}") { backStackEntry ->
+                val kategoriId = backStackEntry.arguments?.getString("kategoriId")?.toLongOrNull() ?: 0L
+                val kategoriNama = backStackEntry.arguments?.getString("kategoriNama") ?: "Semua Produk"
                 val context = LocalContext.current
                 val produkViewModel: ProdukViewModel = viewModel(
                     factory = ProdukViewModelFactory(context)
@@ -153,12 +187,18 @@ fun MainScreen(
 
                 ProdukScreen(
                     viewModel = produkViewModel,
+                    kategoriId = kategoriId,
+                    kategoriNama = kategoriNama,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
                     onProdukClick = { produk ->
                         navController.navigate("detail_produk/${produk.id}")
                     },
                     onTambahProdukClick = {
                         navController.navigate("tambah_produk")
-                    }
+                    },
+                    onResetFilterSemua = {}
                 )
             }
 
@@ -202,15 +242,27 @@ fun MainScreen(
             }
 
             // FORM EDIT PRODUK
-            composable("edit_produk/{produkId}") {
-                TambahProdukScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
-                    onSimpanProduk = { _ ->
-                        navController.popBackStack()
-                    }
+            composable("edit_produk/{produkId}") { backStackEntry ->
+                val produkId = backStackEntry.arguments?.getString("produkId")?.toLongOrNull()
+                val context = LocalContext.current
+                val produkViewModel: ProdukViewModel = viewModel(
+                    factory = ProdukViewModelFactory(context)
                 )
+
+                if (produkId != null) {
+                    EditProdukScreen(
+                        produkId = produkId,
+                        viewModel = produkViewModel,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onSimpanSukses = {
+                            navController.popBackStack()
+                        }
+                    )
+                } else {
+                    Text(text = "ID produk tidak valid")
+                }
             }
 
             // ==========================================
@@ -236,7 +288,6 @@ fun MainScreen(
             // FORM TAMBAH PELANGGAN BARU
             composable("tambah_pelanggan") {
                 TambahPelangganScreen(
-                    pelangganToEdit = null,
                     onNavigateBack = {
                         navController.popBackStack()
                     },
@@ -274,19 +325,103 @@ fun MainScreen(
             }
 
             // FORM EDIT PELANGGAN
-            composable("edit_pelanggan/{pelangganId}") {
+            composable("edit_pelanggan/{pelangganId}") { backStackEntry ->
+                val pelangganId = backStackEntry.arguments?.getString("pelangganId")?.toLongOrNull()
                 val context = LocalContext.current
                 val pelangganViewModel: PelangganViewModel = viewModel(
                     factory = PelangganViewModelFactory(context)
                 )
-                val detailState by pelangganViewModel.detailUiState.collectAsState()
 
-                TambahPelangganScreen(
-                    pelangganToEdit = detailState.data,
+                if (pelangganId != null) {
+                    EditPelangganScreen(
+                        pelangganId = pelangganId,
+                        viewModel = pelangganViewModel,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onPerbaruiPelanggan = { _, _, _ ->
+                            navController.popBackStack()
+                        }
+                    )
+                } else {
+                    Text(text = "ID pelanggan tidak valid")
+                }
+            }
+
+            // ==========================================
+            // MODUL SUPPLIER
+            // ==========================================
+            composable("supplier") {
+                val context = LocalContext.current
+                val supplierViewModel: SupplierViewModel = viewModel(
+                    factory = SupplierViewModelFactory(context)
+                )
+
+                SupplierScreen(
+                    viewModel = supplierViewModel,
+                    onSupplierClick = { supplier ->
+                        navController.navigate("detail_supplier/${supplier.id}")
+                    },
+                    onTambahSupplierClick = {
+                        navController.navigate("tambah_supplier")
+                    }
+                )
+            }
+
+            // FORM TAMBAH SUPPLIER BARU
+            composable("tambah_supplier") {
+                TambahSupplierScreen(
+                    supplierToEdit = null,
                     onNavigateBack = {
                         navController.popBackStack()
                     },
-                    onSimpanPelanggan = { _, _, _ ->
+                    onSimpanSupplier = { _ ->
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // DETAIL SUPPLIER
+            composable("detail_supplier/{supplierId}") { backStackEntry ->
+                val supplierId = backStackEntry.arguments?.getString("supplierId")?.toLongOrNull()
+                val context = LocalContext.current
+                val supplierViewModel: SupplierViewModel = viewModel(
+                    factory = SupplierViewModelFactory(context)
+                )
+
+                if (supplierId != null) {
+                    DetailSupplierScreen(
+                        supplierId = supplierId,
+                        viewModel = supplierViewModel,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onEditSupplierClick = { id ->
+                            navController.navigate("edit_supplier/$id")
+                        },
+                        onSupplierDeleted = {
+                            navController.popBackStack()
+                        }
+                    )
+                } else {
+                    Text(text = "ID supplier tidak valid")
+                }
+            }
+
+            // FORM EDIT SUPPLIER
+            composable("edit_supplier/{supplierId}") {
+                val context = LocalContext.current
+                val supplierViewModel: SupplierViewModel = viewModel(
+                    factory = SupplierViewModelFactory(context)
+                )
+                val detailState by supplierViewModel.detailUiState.collectAsState()
+
+                TambahSupplierScreen(
+                    supplierToEdit = detailState.data,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onSimpanSupplier = { _ ->
                         navController.popBackStack()
                     }
                 )
@@ -343,40 +478,6 @@ fun MainScreen(
                     )
                 } else {
                     Text(text = "ID pembelian tidak valid")
-                }
-            }
-
-            // ==========================================
-            // MODUL SUPPLIER
-            // ==========================================
-            composable("supplier") {
-                val context = LocalContext.current
-                val supplierViewModel: SupplierViewModel = viewModel(
-                    factory = SupplierViewModelFactory(context)
-                )
-
-                SupplierScreen(
-                    viewModel = supplierViewModel,
-                    onSupplierClick = { supplier ->
-                        navController.navigate("detail_supplier/${supplier.id}")
-                    }
-                )
-            }
-
-            composable("detail_supplier/{supplierId}") { backStackEntry ->
-                val supplierId = backStackEntry.arguments?.getString("supplierId")?.toLongOrNull()
-                val context = LocalContext.current
-                val supplierViewModel: SupplierViewModel = viewModel(
-                    factory = SupplierViewModelFactory(context)
-                )
-
-                if (supplierId != null) {
-                    DetailSupplierScreen(
-                        supplierId = supplierId,
-                        viewModel = supplierViewModel
-                    )
-                } else {
-                    Text(text = "ID supplier tidak valid")
                 }
             }
 

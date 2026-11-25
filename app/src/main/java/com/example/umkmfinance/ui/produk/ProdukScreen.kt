@@ -17,10 +17,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +38,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,21 +59,38 @@ import java.util.Locale
 @Composable
 fun ProdukScreen(
     viewModel: ProdukViewModel,
+    kategoriId: Long = 0L,
+    kategoriNama: String = "Semua Produk",
+    onNavigateBack: () -> Unit = {},
     onProdukClick: (Produk) -> Unit,
-    onTambahProdukClick: () -> Unit = {}
+    onTambahProdukClick: () -> Unit = {},
+    onResetFilterSemua: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var aktifKategoriId by remember(kategoriId) { mutableStateOf(kategoriId) }
+    var aktifKategoriNama by remember(kategoriNama) { mutableStateOf(kategoriNama) }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadProduk()
+    LaunchedEffect(kategoriId) {
+        aktifKategoriId = kategoriId
+        aktifKategoriNama = kategoriNama
+        viewModel.loadProduk(kategoriId)
     }
 
     ProdukContent(
         isLoading = uiState.isLoading,
         errorMessage = uiState.errorMessage,
         produkList = uiState.data,
+        kategoriId = aktifKategoriId,
+        kategoriNama = aktifKategoriNama,
+        onNavigateBack = onNavigateBack,
         onProdukClick = onProdukClick,
-        onTambahProdukClick = onTambahProdukClick
+        onTambahProdukClick = onTambahProdukClick,
+        onResetFilterSemua = {
+            aktifKategoriId = 0L
+            aktifKategoriNama = "Semua Produk"
+            viewModel.filterByKategori(0L)
+            onResetFilterSemua()
+        }
     )
 }
 
@@ -80,13 +100,16 @@ fun ProdukContent(
     isLoading: Boolean,
     errorMessage: String?,
     produkList: List<Produk>,
+    kategoriId: Long = 0L,
+    kategoriNama: String = "Semua Produk",
+    onNavigateBack: () -> Unit = {},
     onProdukClick: (Produk) -> Unit,
-    onTambahProdukClick: () -> Unit = {}
+    onTambahProdukClick: () -> Unit = {},
+    onResetFilterSemua: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Semua") }
 
-    // Logika Filter dan Search
     val filteredList = remember(produkList, searchQuery, selectedFilter) {
         produkList.filter { produk ->
             val matchesSearch = produk.nama.contains(searchQuery, ignoreCase = true) ||
@@ -103,7 +126,6 @@ fun ProdukContent(
         }
     }
 
-    // Kalkulasi Nilai Aset Persediaan Produk
     val totalNilaiAset = remember(produkList) {
         produkList.sumOf { it.harga_modal * it.stok }
     }
@@ -112,6 +134,32 @@ fun ProdukContent(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = kategoriNama,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (kategoriId == 0L) "Seluruh Katalog Produk" else "Produk dalam Kategori",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali"
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onTambahProdukClick,
@@ -151,16 +199,28 @@ fun ProdukContent(
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Katalog Produk",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                        if (kategoriId != 0L) {
+                            item {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text("Kategori: $kategoriNama") }
+                                    )
+                                    AssistChip(
+                                        onClick = onResetFilterSemua,
+                                        label = { Text("Lihat Semua") }
+                                    )
+                                }
+                            }
+                        } else {
+                            item { Spacer(modifier = Modifier.height(4.dp)) }
                         }
 
-                        // RINGKASAN NILAI ASET
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -206,7 +266,6 @@ fun ProdukContent(
                             }
                         }
 
-                        // SEARCH BAR
                         item {
                             OutlinedTextField(
                                 value = searchQuery,
@@ -234,7 +293,6 @@ fun ProdukContent(
                             )
                         }
 
-                        // FILTER CHIP KATEGORI / STATUS
                         item {
                             Row(
                                 modifier = Modifier
@@ -253,7 +311,6 @@ fun ProdukContent(
                             }
                         }
 
-                        // JUMLAH PRODUK TERFILTER
                         item {
                             Text(
                                 text = "Menampilkan ${filteredList.size} dari ${produkList.size} produk",
@@ -262,7 +319,6 @@ fun ProdukContent(
                             )
                         }
 
-                        // DAFTAR PRODUK
                         if (filteredList.isEmpty()) {
                             item {
                                 Box(
@@ -279,10 +335,11 @@ fun ProdukContent(
                                 }
                             }
                         } else {
-                            items(filteredList) { produk ->
+                            items(filteredList, key = { it.id }) { produk ->
                                 ProdukCard(
                                     nama = produk.nama,
                                     kodeProduk = produk.kode_produk,
+                                    kategoriLabel = if (kategoriId == 0L) "Kategori #${produk.kategori_id}" else null,
                                     hargaJual = produk.harga_jual,
                                     hargaModal = produk.harga_modal,
                                     stok = produk.stok,
@@ -294,7 +351,7 @@ fun ProdukContent(
                         }
 
                         item {
-                            Spacer(modifier = Modifier.height(80.dp)) // Padding agar tidak tertutup FAB
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                 }
@@ -307,6 +364,7 @@ fun ProdukContent(
 private fun ProdukCard(
     nama: String,
     kodeProduk: String,
+    kategoriLabel: String? = null,
     hargaJual: Double,
     hargaModal: Double,
     stok: Int,
@@ -314,9 +372,9 @@ private fun ProdukCard(
     status: String,
     onClick: () -> Unit
 ) {
-    // Penentuan badge kondisi stok
     val isStokHabis = stok <= 0
     val isStokMenipis = stok in 1..5
+    val isAktif = status.equals("ACTIVE", true) || status.equals("AKTIF", true)
 
     val stokBadgeColor = when {
         isStokHabis -> Color(0xFFC62828)
@@ -334,7 +392,6 @@ private fun ProdukCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header Baris: Nama & Status Active
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -347,29 +404,44 @@ private fun ProdukCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Kode: $kodeProduk",
+                        text = if (kategoriLabel != null) "Kode: $kodeProduk • $kategoriLabel" else "Kode: $kodeProduk",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
 
-                // Badge Status
                 SuggestionChip(
                     onClick = {},
                     label = {
                         Text(
-                            text = status.uppercase(),
+                            text = "Status: ${status.uppercase()}",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
                     },
                     colors = SuggestionChipDefaults.suggestionChipColors(
-                        labelColor = if (status.equals("ACTIVE", true) || status.equals("AKTIF", true)) Color(0xFF1B5E20) else Color(0xFF616161)
+                        labelColor = if (isAktif) Color(0xFF1B5E20) else Color(0xFF616161)
                     )
                 )
             }
 
-            // Baris Harga Jual dan Modal
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Satuan: $satuan",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = if (isAktif) "Status Aktif" else "Status Nonaktif",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isAktif) Color(0xFF2E7D32) else MaterialTheme.colorScheme.outline
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -401,7 +473,6 @@ private fun ProdukCard(
                 }
             }
 
-            // Baris Status Stok dengan Peringatan Warna
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -419,7 +490,7 @@ private fun ProdukCard(
                     }
                     Text(
                         text = when {
-                            isStokHabis -> "Stok Habis"
+                            isStokHabis -> "Stok Habis ($satuan)"
                             isStokMenipis -> "Stok Menipis: $stok $satuan"
                             else -> "Tersedia: $stok $satuan"
                         },
@@ -429,10 +500,9 @@ private fun ProdukCard(
                     )
                 }
 
-                // Perkiraan Laba Satuan
                 val profit = (hargaJual - hargaModal).coerceAtLeast(0.0)
                 Text(
-                    text = "Laba/unit: ${formatRupiah(profit)}",
+                    text = "Laba/$satuan: ${formatRupiah(profit)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF2E7D32)
                 )
@@ -447,16 +517,13 @@ private fun formatRupiah(value: Double): String {
     return formatter.format(value)
 }
 
-// =============================================================
-// PREVIEW ANDROID STUDIO (SPLIT MODE)
-// =============================================================
-
-@Preview(name = "Produk Screen - Berisi Data", showBackground = true, showSystemUi = true)
+@Preview(name = "Produk Screen - Satuan & Status", showBackground = true, showSystemUi = true)
 @Composable
-private fun ProdukScreenFullPreview() {
+private fun ProdukScreenSatuanStatusPreview() {
     val dummy = listOf(
         Produk(
             id = 1L,
+            kategori_id = 1L,
             nama = "Es Teh Manis Jumbo",
             kode_produk = "PRD-001",
             harga_jual = 5000.0,
@@ -467,23 +534,14 @@ private fun ProdukScreenFullPreview() {
         ),
         Produk(
             id = 2L,
-            nama = "Kopi Susu Aren",
-            kode_produk = "PRD-002",
-            harga_jual = 15000.0,
-            harga_modal = 8000.0,
-            stok = 3, // Memicu badge stok menipis
-            satuan = "Cup",
-            status = "ACTIVE"
-        ),
-        Produk(
-            id = 3L,
+            kategori_id = 2L,
             nama = "Roti Panggang Keju",
-            kode_produk = "PRD-003",
+            kode_produk = "PRD-002",
             harga_jual = 12000.0,
             harga_modal = 6000.0,
-            stok = 0, // Memicu badge stok habis
+            stok = 0,
             satuan = "Porsi",
-            status = "ACTIVE"
+            status = "NONAKTIF"
         )
     )
 
@@ -492,6 +550,8 @@ private fun ProdukScreenFullPreview() {
             isLoading = false,
             errorMessage = null,
             produkList = dummy,
+            kategoriId = 0L,
+            kategoriNama = "Semua Produk",
             onProdukClick = {},
             onTambahProdukClick = {}
         )

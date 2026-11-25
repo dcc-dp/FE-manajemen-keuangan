@@ -21,8 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PendingActions
@@ -65,11 +65,11 @@ fun MenuScreen(
     role: String,
     onMenuClick: (String) -> Unit
 ) {
-    // Daftar semua menu dengan ikon dan skema warna yang selaras
+    // Daftar semua menu (menu Produk diakses melalui Kategori Produk)
     val allMenuItems = mapOf(
         "Penjualan" to MenuItemData("Penjualan", "Penjualan", Icons.Default.PointOfSale, Color(0xFF2E7D32), Color(0xFFE8F5E9)),
         "Pembelian" to MenuItemData("Pembelian", "Pembelian", Icons.Default.ShoppingBag, Color(0xFF1565C0), Color(0xFFE3F2FD)),
-        "Produk" to MenuItemData("Produk", "Produk", Icons.Default.Inventory2, Color(0xFFE65100), Color(0xFFFFF3E0)),
+        "Kategori Produk" to MenuItemData("Kategori Produk", "Kategori Produk", Icons.Default.Category, Color(0xFFE65100), Color(0xFFFFF3E0)),
         "Pelanggan" to MenuItemData("Pelanggan", "Pelanggan", Icons.Default.People, Color(0xFF6A1B9A), Color(0xFFF3E5F5)),
         "Supplier" to MenuItemData("Supplier", "Supplier", Icons.Default.Store, Color(0xFF00838F), Color(0xFFE0F7FA)),
         "Pengeluaran" to MenuItemData("Pengeluaran", "Pengeluaran", Icons.Default.MoneyOff, Color(0xFFC62828), Color(0xFFFFEBEE)),
@@ -85,12 +85,12 @@ fun MenuScreen(
 
     val menuKeys = when (role.uppercase()) {
         "OWNER" -> listOf(
-            "Penjualan", "Pembelian", "Produk", "Pelanggan", "Supplier",
+            "Penjualan", "Pembelian", "Kategori Produk", "Pelanggan", "Supplier",
             "Pengeluaran", "Piutang", "Hutang", "Rekening", "Target Keuangan",
             "Laporan", "Pengguna", "Role & Permission", "Notifikasi"
         )
         "ADMIN" -> listOf(
-            "Penjualan", "Pembelian", "Produk", "Pelanggan", "Supplier",
+            "Penjualan", "Pembelian", "Kategori Produk", "Pelanggan", "Supplier",
             "Pengeluaran", "Piutang", "Hutang", "Rekening", "Laporan", "Notifikasi"
         )
         "KASIR" -> listOf(

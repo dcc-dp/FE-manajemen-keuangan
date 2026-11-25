@@ -44,24 +44,18 @@ import com.example.umkmfinance.data.model.Pelanggan
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TambahPelangganScreen(
-    pelangganToEdit: Pelanggan? = null,
     onNavigateBack: () -> Unit,
-    onSimpanPelanggan: (Pelanggan, Double?, String?) -> Unit // (Pelanggan, LimitPiutang, Catatan)
+    onSimpanPelanggan: (Pelanggan, Double?, String?) -> Unit
 ) {
-    val isEditMode = pelangganToEdit != null
-
-    // State Input Form
-    var nama by remember { mutableStateOf(pelangganToEdit?.nama ?: "") }
-    var telepon by remember { mutableStateOf(pelangganToEdit?.telepon ?: "") }
-    var email by remember { mutableStateOf(pelangganToEdit?.email ?: "") }
-    var alamat by remember { mutableStateOf(pelangganToEdit?.alamat ?: "") }
+    var nama by remember { mutableStateOf("") }
+    var telepon by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var alamat by remember { mutableStateOf("") }
     var catatanKhusus by remember { mutableStateOf("") }
 
-    // Fitur Batas Piutang (Credit Limit)
     var isLimitPiutangAktif by remember { mutableStateOf(false) }
     var limitPiutangText by remember { mutableStateOf("") }
 
-    // Validasi Error
     var namaError by remember { mutableStateOf(false) }
     var teleponError by remember { mutableStateOf(false) }
 
@@ -72,7 +66,7 @@ fun TambahPelangganScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isEditMode) "Edit Data Pelanggan" else "Tambah Pelanggan Baru",
+                        text = "Tambah Pelanggan Baru",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -97,7 +91,6 @@ fun TambahPelangganScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Nama Lengkap (Wajib)
             OutlinedTextField(
                 value = nama,
                 onValueChange = {
@@ -115,11 +108,9 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // Nomor HP / WhatsApp (Format angka otomatis)
             OutlinedTextField(
                 value = telepon,
                 onValueChange = { input ->
-                    // Otomatis hanya angka dan karakter '+' untuk kode negara
                     telepon = input.filter { it.isDigit() || it == '+' }
                     if (telepon.isNotBlank()) teleponError = false
                 },
@@ -139,7 +130,6 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // Email (Opsional)
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -151,7 +141,6 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // Alamat Lengkap (Untuk kebutuhan delivery / antar pesanan)
             OutlinedTextField(
                 value = alamat,
                 onValueChange = { alamat = it },
@@ -163,7 +152,6 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // Catatan Khusus UMKM
             OutlinedTextField(
                 value = catatanKhusus,
                 onValueChange = { catatanKhusus = it },
@@ -175,79 +163,77 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             )
 
-            // KARTU BATAS MAKSIMAL PIUTANG (CREDIT LIMIT)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Batas Kasbon (Credit Limit)",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Batasi maksimal piutang pelanggan untuk mencegah macet",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                        Switch(
-                            checked = isLimitPiutangAktif,
-                            onCheckedChange = { isLimitPiutangAktif = it }
-                        )
-                    }
+//            Card(
+//                modifier = Modifier.fillMaxWidth(),
+//                shape = RoundedCornerShape(12.dp),
+//                colors = CardDefaults.cardColors(
+//                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+//                )
+//            ) {
+//                Column(
+//                    modifier = Modifier.padding(14.dp),
+//                    verticalArrangement = Arrangement.spacedBy(10.dp)
+//                ) {
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.SpaceBetween,
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Column(modifier = Modifier.weight(1f)) {
+//                            Text(
+//                                text = "Batas Kasbon (Credit Limit)",
+//                                style = MaterialTheme.typography.titleMedium,
+//                                fontWeight = FontWeight.SemiBold
+//                            )
+//                            Text(
+//                                text = "Batasi maksimal piutang pelanggan untuk mencegah macet",
+//                                style = MaterialTheme.typography.bodySmall,
+//                                color = MaterialTheme.colorScheme.outline
+//                            )
+//                        }
+//                        Switch(
+//                            checked = isLimitPiutangAktif,
+//                            onCheckedChange = { isLimitPiutangAktif = it }
+//                        )
+//                    }
 
-                    if (isLimitPiutangAktif) {
-                        OutlinedTextField(
-                            value = limitPiutangText,
-                            onValueChange = { input ->
-                                limitPiutangText = input.filter { it.isDigit() }
-                            },
-                            label = { Text("Maksimal Piutang (Rp)") },
-                            placeholder = { Text("500000") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.size(4.dp))
-                            Text(
-                                text = "Kasir akan diingatkan jika kasbon pelanggan melebihi batas ini.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
+//                    if (isLimitPiutangAktif) {
+//                        OutlinedTextField(
+//                            value = limitPiutangText,
+//                            onValueChange = { input ->
+//                                limitPiutangText = input.filter { it.isDigit() }
+//                            },
+//                            label = { Text("Maksimal Piutang (Rp)") },
+//                            placeholder = { Text("500000") },
+//                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                            singleLine = true,
+//                            modifier = Modifier.fillMaxWidth(),
+//                            shape = RoundedCornerShape(10.dp)
+//                        )
+//
+//                        Row(
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            modifier = Modifier.padding(top = 2.dp)
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Default.Info,
+//                                contentDescription = null,
+//                                modifier = Modifier.size(14.dp),
+//                                tint = MaterialTheme.colorScheme.primary
+//                            )
+//                            Spacer(modifier = Modifier.size(4.dp))
+//                            Text(
+//                                text = "Kasir akan diingatkan jika kasbon pelanggan melebihi batas ini.",
+//                                style = MaterialTheme.typography.labelSmall,
+//                                color = MaterialTheme.colorScheme.primary
+//                            )
+//                        }
+//                    }
+//                }
+//            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Tombol Simpan
             Button(
                 onClick = {
                     namaError = nama.isBlank()
@@ -256,17 +242,17 @@ fun TambahPelangganScreen(
                     if (!namaError && !teleponError) {
                         val limitNominal = if (isLimitPiutangAktif) limitPiutangText.toDoubleOrNull() else null
 
-                        val resultPelanggan = Pelanggan(
-                            id = pelangganToEdit?.id ?: 0L,
-                            usaha_id = pelangganToEdit?.usaha_id ?: 1L,
+                        val pelangganBaru = Pelanggan(
+                            id = 0L,
+                            usaha_id = 1L,
                             nama = nama.trim(),
                             telepon = telepon.trim(),
                             email = email.trim().ifEmpty { null },
                             alamat = alamat.trim().ifEmpty { null },
-                            poin = pelangganToEdit?.poin ?: 0
+                            poin = 0
                         )
 
-                        onSimpanPelanggan(resultPelanggan, limitNominal, catatanKhusus.trim().ifEmpty { null })
+                        onSimpanPelanggan(pelangganBaru, limitNominal, catatanKhusus.trim().ifEmpty { null })
                     }
                 },
                 modifier = Modifier
@@ -275,7 +261,7 @@ fun TambahPelangganScreen(
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
-                    text = if (isEditMode) "Perbarui Pelanggan" else "Simpan Pelanggan",
+                    text = "Simpan Pelanggan",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -286,38 +272,11 @@ fun TambahPelangganScreen(
     }
 }
 
-// =============================================================
-// PREVIEW ANDROID STUDIO
-// =============================================================
-
 @Preview(name = "Tambah Pelanggan Baru", showBackground = true, showSystemUi = true)
 @Composable
 private fun TambahPelangganScreenPreview() {
     MaterialTheme {
         TambahPelangganScreen(
-            pelangganToEdit = null,
-            onNavigateBack = {},
-            onSimpanPelanggan = { _, _, _ -> }
-        )
-    }
-}
-
-@Preview(name = "Edit Data Pelanggan", showBackground = true, showSystemUi = true)
-@Composable
-private fun EditPelangganScreenPreview() {
-    val dummy = Pelanggan(
-        id = 1L,
-        usaha_id = 1L,
-        nama = "Budi Santoso",
-        telepon = "081234567890",
-        email = "budi@gmail.com",
-        alamat = "Jl. Merdeka No. 12, Makassar",
-        poin = 150
-    )
-
-    MaterialTheme {
-        TambahPelangganScreen(
-            pelangganToEdit = dummy,
             onNavigateBack = {},
             onSimpanPelanggan = { _, _, _ -> }
         )

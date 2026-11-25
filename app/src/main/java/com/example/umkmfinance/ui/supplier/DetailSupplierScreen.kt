@@ -84,7 +84,7 @@ data class FakturPembelianItem(
 @Composable
 fun DetailSupplierScreen(
     supplierId: Long,
-    viewModel: SupplierViewModel,
+    viewModel: SupplierViewModel,   
     onNavigateBack: () -> Unit = {},
     onEditSupplierClick: (Long) -> Unit = {},
     onSupplierDeleted: () -> Unit = {}

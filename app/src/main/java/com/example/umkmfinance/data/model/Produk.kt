@@ -1,5 +1,7 @@
 package com.example.umkmfinance.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class ProdukResponse(
     val success: Boolean = false,
     val message: String = "",
@@ -15,6 +17,7 @@ data class ProdukDetailResponse(
 data class Produk(
     val id: Long = 0,
     val usaha_id: Long = 0,
+    @SerializedName("kategori_produk_id")
     val kategori_id: Long = 0,
     val kode_produk: String = "",
     val barcode: String? = null,
@@ -22,6 +25,9 @@ data class Produk(
     val harga_modal: Double = 0.0,
     val harga_jual: Double = 0.0,
     val stok: Int = 0,
-    val satuan: String = "Pcs",
-    val status: String = "ACTIVE"
+    val satuan: String = "",
+    val status: String = "AKTIF",
+    val created_at: String? = null,
+    val updated_at: String? = null
 )
+

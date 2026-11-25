@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.umkmfinance.data.model.Penjualan
+import com.example.umkmfinance.data.repository.PenjualanRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,8 @@ class PenjualanViewModel(
     private val context: Context
 ) : ViewModel() {
 
+    private val repository = PenjualanRepository(context)
+
     private val _uiState = MutableStateFlow(PenjualanUiState())
     val uiState: StateFlow<PenjualanUiState> = _uiState.asStateFlow()
 
@@ -27,19 +30,20 @@ class PenjualanViewModel(
     fun loadPenjualan() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            try {
-                // TODO: Hubungkan ke PenjualanRepository / API Backend Node.js
-                // val list = repository.getPenjualanList()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    data = emptyList()
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.localizedMessage ?: "Gagal memuat transaksi penjualan"
-                )
-            }
+            repository.getDaftarPenjualan()
+                .onSuccess { list ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        data = list,
+                        errorMessage = null
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = e.localizedMessage ?: "Gagal memuat transaksi penjualan"
+                    )
+                }
         }
     }
 
@@ -47,19 +51,49 @@ class PenjualanViewModel(
     fun loadDetailPenjualan(id: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            try {
-                // TODO: Hubungkan ke PenjualanRepository / API Backend Node.js
-                // val detail = repository.getPenjualanById(id)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    detailPenjualan = null
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.localizedMessage ?: "Gagal memuat detail penjualan"
-                )
-            }
+            repository.getDetailPenjualan(id)
+                .onSuccess { detail ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        detailPenjualan = detail,
+                        errorMessage = null
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = e.localizedMessage ?: "Gagal memuat detail penjualan"
+                    )
+                }
+        }
+    }
+
+    // Menyimpan transaksi penjualan baru
+    fun simpanPenjualan(
+        penjualan: Penjualan,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            repository.simpanPenjualan(penjualan)
+                .onSuccess { tersimpan ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        data = listOf(tersimpan) + _uiState.value.data,
+                        detailPenjualan = tersimpan,
+                        errorMessage = null
+                    )
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    val pesan = e.localizedMessage ?: "Gagal menyimpan transaksi penjualan"
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = pesan
+                    )
+                    onError(pesan)
+                }
         }
     }
 }
