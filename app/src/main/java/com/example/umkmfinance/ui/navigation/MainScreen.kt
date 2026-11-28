@@ -14,8 +14,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,6 +26,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.umkmfinance.data.repository.KategoriPengeluaranRepository
+import com.example.umkmfinance.data.repository.PengeluaranRepository
+import com.example.umkmfinance.data.repository.RekeningRepository
 import com.example.umkmfinance.ui.dashboard.DashboardScreen
 import com.example.umkmfinance.ui.dashboard.DashboardViewModel
 import com.example.umkmfinance.ui.hutang.DetailHutangScreen
@@ -43,7 +48,9 @@ import com.example.umkmfinance.ui.pembelian.DetailPembelianScreen
 import com.example.umkmfinance.ui.pembelian.PembelianScreen
 import com.example.umkmfinance.ui.pembelian.PembelianViewModel
 import com.example.umkmfinance.ui.pembelian.PembelianViewModelFactory
-import com.example.umkmfinance.ui.pengeluaran.DetailPengeluaranScreen
+import com.example.umkmfinance.ui.pengeluaran.KategoriPengeluaranScreen
+import com.example.umkmfinance.ui.pengeluaran.KategoriPengeluaranViewModel
+import com.example.umkmfinance.ui.pengeluaran.KategoriPengeluaranViewModelFactory
 import com.example.umkmfinance.ui.pengeluaran.PengeluaranScreen
 import com.example.umkmfinance.ui.pengeluaran.PengeluaranViewModel
 import com.example.umkmfinance.ui.pengeluaran.PengeluaranViewModelFactory
@@ -61,7 +68,6 @@ import com.example.umkmfinance.ui.produk.ProdukScreen
 import com.example.umkmfinance.ui.produk.ProdukViewModel
 import com.example.umkmfinance.ui.produk.ProdukViewModelFactory
 import com.example.umkmfinance.ui.produk.TambahProdukScreen
-import com.example.umkmfinance.ui.rekening.DetailRekeningScreen
 import com.example.umkmfinance.ui.rekening.RekeningScreen
 import com.example.umkmfinance.ui.rekening.RekeningViewModel
 import com.example.umkmfinance.ui.rekening.RekeningViewModelFactory
@@ -74,7 +80,9 @@ import com.example.umkmfinance.ui.supplier.TambahSupplierScreen
 @Composable
 fun MainScreen(
     role: String,
-    dashboardViewModel: DashboardViewModel
+    dashboardViewModel: DashboardViewModel,
+    usahaId: Long = 1L,
+    createdBy: Long = 1L
 ) {
     val navController = rememberNavController()
 
@@ -129,7 +137,7 @@ fun MainScreen(
                 Text(text = "Halaman Laporan")
             }
 
-            // MENU UTAMA (Produk diakses via Kategori Produk)
+            // MENU UTAMA (Produk via Kategori Produk; Pengeluaran via Kategori Pengeluaran)
             composable("menu") {
                 MenuScreen(
                     role = role,
@@ -140,7 +148,7 @@ fun MainScreen(
                             "Kategori Produk" -> navController.navigate("kategori_produk")
                             "Pelanggan" -> navController.navigate("pelanggan")
                             "Supplier" -> navController.navigate("supplier")
-                            "Pengeluaran" -> navController.navigate("pengeluaran")
+                            "Kategori Pengeluaran" -> navController.navigate("kategori_pengeluaran")
                             "Piutang" -> navController.navigate("piutang")
                             "Hutang" -> navController.navigate("hutang")
                             "Rekening" -> navController.navigate("rekening")
@@ -482,37 +490,59 @@ fun MainScreen(
             }
 
             // ==========================================
-            // MODUL PENGELUARAN
+            // MODUL KATEGORI PENGELUARAN -> PENGELUARAN
             // ==========================================
-            composable("pengeluaran") {
+            composable("kategori_pengeluaran") {
                 val context = LocalContext.current
-                val pengeluaranViewModel: PengeluaranViewModel = viewModel(
-                    factory = PengeluaranViewModelFactory(context)
+                val kategoriRepo = remember(context) { KategoriPengeluaranRepository(context) }
+                val kategoriPengeluaranViewModel: KategoriPengeluaranViewModel = viewModel(
+                    factory = KategoriPengeluaranViewModelFactory(kategoriRepo)
                 )
+                val uiState by kategoriPengeluaranViewModel.uiState.collectAsState()
 
-                PengeluaranScreen(
-                    viewModel = pengeluaranViewModel,
-                    onPengeluaranClick = { pengeluaran ->
-                        navController.navigate("detail_pengeluaran/${pengeluaran.id}")
+                LaunchedEffect(usahaId) {
+                    kategoriPengeluaranViewModel.loadKategoriPengeluaran(usahaId)
+                }
+
+                KategoriPengeluaranScreen(
+                    usahaId = usahaId,
+                    kategoriList = uiState.data,
+                    onKategoriClick = { kategori ->
+                        navController.navigate("pengeluaran?kategoriId=${kategori.id}")
+                    },
+                    onSimpanKategori = { nama ->
+                        kategoriPengeluaranViewModel.tambahKategoriPengeluaran(usahaId, nama)
                     }
                 )
             }
 
-            composable("detail_pengeluaran/{pengeluaranId}") { backStackEntry ->
-                val pengeluaranId = backStackEntry.arguments?.getString("pengeluaranId")?.toLongOrNull()
+            composable("pengeluaran?kategoriId={kategoriId}") { backStackEntry ->
+                val kategoriId = backStackEntry.arguments?.getString("kategoriId")?.toLongOrNull()
                 val context = LocalContext.current
+
+                val pengeluaranRepo = remember(context) { PengeluaranRepository(context) }
                 val pengeluaranViewModel: PengeluaranViewModel = viewModel(
-                    factory = PengeluaranViewModelFactory(context)
+                    factory = PengeluaranViewModelFactory(pengeluaranRepo)
                 )
 
-                if (pengeluaranId != null) {
-                    DetailPengeluaranScreen(
-                        pengeluaranId = pengeluaranId,
-                        viewModel = pengeluaranViewModel
-                    )
-                } else {
-                    Text(text = "ID pengeluaran tidak valid")
+                val kategoriRepo = remember(context) { KategoriPengeluaranRepository(context) }
+                val kategoriPengeluaranViewModel: KategoriPengeluaranViewModel = viewModel(
+                    factory = KategoriPengeluaranViewModelFactory(kategoriRepo)
+                )
+                val kategoriState by kategoriPengeluaranViewModel.uiState.collectAsState()
+
+                LaunchedEffect(usahaId) {
+                    kategoriPengeluaranViewModel.loadKategoriPengeluaran(usahaId)
                 }
+
+                PengeluaranScreen(
+                    viewModel = pengeluaranViewModel,
+                    usahaId = usahaId,
+                    createdBy = createdBy,
+                    initialKategoriId = kategoriId,
+                    kategoriList = kategoriState.data,
+                    onPengeluaranClick = {}
+                )
             }
 
             // ==========================================
@@ -588,33 +618,16 @@ fun MainScreen(
             // ==========================================
             composable("rekening") {
                 val context = LocalContext.current
+                val rekeningRepo = remember(context) { RekeningRepository(context) }
                 val rekeningViewModel: RekeningViewModel = viewModel(
-                    factory = RekeningViewModelFactory(context)
+                    factory = RekeningViewModelFactory(rekeningRepo)
                 )
 
                 RekeningScreen(
                     viewModel = rekeningViewModel,
-                    onRekeningClick = { rekening ->
-                        navController.navigate("detail_rekening/${rekening.id}")
-                    }
+                    usahaId = usahaId,
+                    onRekeningClick = {}
                 )
-            }
-
-            composable("detail_rekening/{rekeningId}") { backStackEntry ->
-                val rekeningId = backStackEntry.arguments?.getString("rekeningId")?.toLongOrNull()
-                val context = LocalContext.current
-                val rekeningViewModel: RekeningViewModel = viewModel(
-                    factory = RekeningViewModelFactory(context)
-                )
-
-                if (rekeningId != null) {
-                    DetailRekeningScreen(
-                        rekeningId = rekeningId,
-                        viewModel = rekeningViewModel
-                    )
-                } else {
-                    Text(text = "ID rekening tidak valid")
-                }
             }
         }
     }

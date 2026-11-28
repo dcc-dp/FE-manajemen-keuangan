@@ -65,14 +65,14 @@ fun MenuScreen(
     role: String,
     onMenuClick: (String) -> Unit
 ) {
-    // Daftar semua menu (menu Produk diakses melalui Kategori Produk)
+    // Daftar semua menu (Produk melalui Kategori Produk; Pengeluaran melalui Kategori Pengeluaran)
     val allMenuItems = mapOf(
         "Penjualan" to MenuItemData("Penjualan", "Penjualan", Icons.Default.PointOfSale, Color(0xFF2E7D32), Color(0xFFE8F5E9)),
         "Pembelian" to MenuItemData("Pembelian", "Pembelian", Icons.Default.ShoppingBag, Color(0xFF1565C0), Color(0xFFE3F2FD)),
         "Kategori Produk" to MenuItemData("Kategori Produk", "Kategori Produk", Icons.Default.Category, Color(0xFFE65100), Color(0xFFFFF3E0)),
         "Pelanggan" to MenuItemData("Pelanggan", "Pelanggan", Icons.Default.People, Color(0xFF6A1B9A), Color(0xFFF3E5F5)),
         "Supplier" to MenuItemData("Supplier", "Supplier", Icons.Default.Store, Color(0xFF00838F), Color(0xFFE0F7FA)),
-        "Pengeluaran" to MenuItemData("Pengeluaran", "Pengeluaran", Icons.Default.MoneyOff, Color(0xFFC62828), Color(0xFFFFEBEE)),
+        "Kategori Pengeluaran" to MenuItemData("Kategori Pengeluaran", "Kategori Pengeluaran", Icons.Default.MoneyOff, Color(0xFFC62828), Color(0xFFFFEBEE)),
         "Piutang" to MenuItemData("Piutang", "Piutang", Icons.Default.PendingActions, Color(0xFFF57F17), Color(0xFFFFFDE7)),
         "Hutang" to MenuItemData("Hutang", "Hutang", Icons.Default.ReceiptLong, Color(0xFFAD1457), Color(0xFFFCE4EC)),
         "Rekening" to MenuItemData("Rekening", "Rekening", Icons.Default.AccountBalance, Color(0xFF283593), Color(0xFFE8EAF6)),
@@ -86,12 +86,12 @@ fun MenuScreen(
     val menuKeys = when (role.uppercase()) {
         "OWNER" -> listOf(
             "Penjualan", "Pembelian", "Kategori Produk", "Pelanggan", "Supplier",
-            "Pengeluaran", "Piutang", "Hutang", "Rekening", "Target Keuangan",
+            "Kategori Pengeluaran", "Piutang", "Hutang", "Rekening", "Target Keuangan",
             "Laporan", "Pengguna", "Role & Permission", "Notifikasi"
         )
         "ADMIN" -> listOf(
             "Penjualan", "Pembelian", "Kategori Produk", "Pelanggan", "Supplier",
-            "Pengeluaran", "Piutang", "Hutang", "Rekening", "Laporan", "Notifikasi"
+            "Kategori Pengeluaran", "Piutang", "Hutang", "Rekening", "Laporan", "Notifikasi"
         )
         "KASIR" -> listOf(
             "Penjualan", "Pelanggan", "Piutang", "Notifikasi"
